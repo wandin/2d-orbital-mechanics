@@ -1,164 +1,210 @@
-# 2D Dynamics – Force, Mass & Numerical Integration
+# Circular Orbit – Energy Preservation & Numerical Integration
 
-A deterministic **2D dynamics simulator** written in **C++ using Raylib**, focused on modeling **force-based motion**, **mass effects**, and **numerical integration stability**.
+A **2D orbital mechanics simulator** written in **C++ using Raylib**, focused on demonstrating  
+**energy conservation**, **numerical stability**, and the impact of different **time integration methods** on orbital motion.
 
-This project extends a previous kinematics-only simulator into a **Newtonian dynamics model**, making acceleration an emergent property derived from forces rather than a direct input. It also provides real-time visual feedback to compare different integration methods under stress.
-
----
-
-## 🎯 Project Goals
-
-- Model **force → acceleration → velocity → position** correctly
-- Compare numerical integration methods (Euler vs RK2)
-- Visualize physical quantities (force, acceleration, energy)
-- Expose numerical instability using controlled timestep stress
-- Keep a clean, modular simulation architecture
-
-This project is designed as a learning and demonstration tool for **physics simulation**, **robotics**, and **aerospace/GNC fundamentals**.
+This project is part of a progressive simulation series aimed at building strong foundations for **Guidance, Navigation & Control (GNC)**, aerospace simulation, and physics-based system modeling.
 
 ---
 
-## 🧱 Architecture Overview
+## 🎯 Project Objectives
 
-The simulator is intentionally split into clear, independent modules:
-
-- State → Physical state (data only)
-- Dynamics → Force resolution (physics laws)
-- Integrator → Numerical integration
-- Renderer → Visualization & HUD
-- Main Loop → Orchestration & input
-
-
-### Key Design Principle
-
-> **The integrator never computes forces.**  
-> **The dynamics module never updates position.**
-
-This separation mirrors real-world simulation and control software.
+- Simulate **circular orbital motion** under central gravity
+- Compare **Euler integration** with **energy-preserving integrators**
+- Demonstrate **numerical energy drift** vs **symplectic behavior**
+- Visualize long-term stability of orbital trajectories
+- Build intuition for why integrator choice matters in GNC systems
 
 ---
 
-## ⚙️ Physical Model
+## 🧠 Physical Model
 
-- **Input** applies a force vector
-- **Acceleration** is computed using Newton’s second law: 
+The system models a **point mass orbiting a fixed central body** under Newtonian gravity.
+
+### Central Gravity Model
+
+The acceleration is defined as:
+
 ```
-a = F / m
- ```
-
-- **Linear drag** is applied as a resistive force:
+a = -μ · r / |r|³
 ```
-F_drag = -k · v
- ```
 
-- Motion exhibits inertia, damping, and mass-dependent response
+Where:
+- `r` is the vector from the satellite to the central body
+- `μ` is the **gravitational parameter**
+
+```
+μ = G · M
+```
+
+In this simulation, `μ` is treated as a configurable constant.
+
+---
+
+## 🛰 Circular Orbit Initial Conditions
+
+A perfect circular orbit is achieved by initializing velocity as:
+
+```
+v = sqrt( μ / r )
+```
+
+Perpendicular to the radius vector.
+
+This condition is used as a **baseline** to evaluate numerical accuracy.
 
 ---
 
 ## 🔬 Numerical Integrators
 
-### Euler (Semi-Implicit)
+### Euler (Explicit)
+
 - First-order method
-- Very fast and simple
-- Accumulates numerical error quickly
-- Becomes unstable with larger timesteps
+- Computationally cheap
+- Does **not conserve energy**
+- Produces orbital spiraling over time
 
-### RK2 (Midpoint)
-- Second-order Runge–Kutta method
-- Evaluates system state at the midpoint of the timestep
-- Improved stability and energy behavior
-- Still computationally inexpensive
-
-Integrators can be switched **at runtime**.
+Observed behavior:
+- Radius error increases continuously
+- Total energy drifts monotonically
+- Orbit becomes unstable over long simulation runs
 
 ---
 
-## ⚠️ Stress Mode
+### Velocity Verlet (Symplectic Integrator)
 
-Stress Mode intentionally increases the simulation timestep to highlight numerical instability.
+- Second-order, time-reversible method
+- Widely used in orbital and molecular dynamics
+- **Preserves energy in the long term**
+- Maintains stable closed orbits
 
-| Mode | Simulation Timestep |
-|----|----|
-| Normal | 100 Hz |
-| Stress | 25 Hz |
+Observed behavior:
+- Radius error remains near zero
+- Total energy oscillates slightly but remains bounded
+- Orbit remains stable even after tens of thousands of steps
 
-Under stress conditions:
-- Euler shows drift, overshoot, and energy gain
-- RK2 maintains smoother and more stable motion
-
-This mode exists purely to **make numerical behavior visible**.
+This integrator demonstrates why **symplectic methods are preferred in orbital mechanics and GNC simulations**.
 
 ---
 
-## 🎨 Visual Feedback
+## ⚡ Energy Analysis
 
-The simulator uses multiple visual cues to communicate physical behavior:
+The total mechanical energy is computed as:
+```
+E = (1/2) · v² − μ / r
+```
 
-### Vectors
-- **Yellow vector** → Applied force (input)
-- **Red vector** → Resulting acceleration
+### Observations
 
-### Trajectory Trail
-Trail color changes depending on motion regime:
-- **Green** → Active acceleration
-- **Blue** → Inertial coasting
-- **Red** → Braking / drag-dominated motion
+- **Euler**
+  - Energy steadily drifts
+  - Leads to artificial orbital decay or expansion
+- **Verlet**
+  - Energy oscillates around the correct value
+  - No long-term drift
 
-### HUD
-- Position and velocity
-- Current integrator
-- Timestep and stress mode
-- Mass value
-- Kinetic energy
-- FPS
+This behavior directly explains the visual spiraling observed with Euler integration.
 
-These visuals allow the system’s physics to be understood **without reading code**.
+---
+
+## 🎨 Visualization
+
+- Green trail → orbital path
+- Yellow dot → central body
+- Red dot → orbiting satellite
+- HUD displays:
+  - Integrator type
+  - Total energy
+  - Radius error
+  - FPS
+
+The visualization makes numerical errors **immediately visible**, even without inspecting code.
 
 ---
 
 ## 🎮 Controls
 
 | Key | Action |
-|---|---|
-| **W A S D** | Apply force |
-| **↑ / ↓** | Increase / decrease mass |
+|----|-------|
 | **1** | Switch to Euler integrator |
-| **2** | Switch to RK2 integrator |
-| **T** | Toggle Stress Mode |
-| **R** | Reset simulation |
+| **2** | Switch to Velocity Verlet |
+| **R** | Reset orbit |
 | **ESC** | Exit |
 
 ---
 
-## 🛠️ Build & Run
+## 🛠 Build & Run
 
 ### Requirements
-- Linux
-- C++17 compiler (g++ or clang)
-- Raylib
 
-### Build (example)
+- C++17 compatible compiler
+- Raylib
+- Supported platforms:
+  - Linux
+  - Windows
+  - macOS
+
+### Build (Linux)
+
 ```bash
 mkdir -p build
 g++ -Isrc $(find src -name '*.cpp') -o build/app \
   -std=c++17 -Wall -Wextra \
   -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 ```
-
 ### Run
-```bash
+```
 ./build/app
 ```
 
-### 📚 Background & Motivation
+### Build (Windows MinGW)
+```
+mkdir build
+g++ -Isrc src\**\*.cpp -o build\app.exe ^
+  -std=c++17 -Wall -Wextra ^
+  -lraylib -lopengl32 -lgdi32 -lwinmm
+```
+### Run
+```
+build\app.exe
+```
 
-- This project is part of a progressive simulation series:
-- 2D Kinematics – Position, velocity, time integration
-- 2D Dynamics (this project) – Force, mass, drag
-- Orbital Motion & Energy Preservation (planned)
-- Control Systems & Estimation (planned)
-- The focus is not visual fidelity, but numerical correctness, clarity, and engineering structure.
 
-### 📜 License
+### 🧱 Architecture Overview
 
-This project is provided for educational and demonstration purposes.
+The project is intentionally modular:
+
+- **State**
+  - Holds position, velocity, acceleration, and trajectory history
+
+- **OrbitDynamics**
+  - Computes gravitational acceleration and total energy
+
+- **Integrator**
+  - Advances the state using different numerical methods
+
+- **Renderer**
+  - Visualization and HUD
+
+This separation mirrors real-world simulation and flight software design.
+
+### 📚 Educational Context
+
+This project is part of a progressive simulation roadmap:
+
+Project	Concept:
+- 1	Kinematics – State propagation
+- 2	Dynamics – Force, mass, drag
+- 3	Orbital Mechanics (this project)
+- 4	Attitude Dynamics
+- 5	Full 6DOF Rigid Body
+- 6	Control Systems (PID, LQR)
+- 7	State Estimation (Kalman Filters)
+
+### 🚀 Next Steps
+
+Multiple orbiting bodies
+Elliptical and perturbed orbits
+Energy vs time plots
+Attitude and rotational dynamics
+Closed-loop orbital control

@@ -19,9 +19,6 @@ void Integrator::Step(IntegratorType Type, State& State, float DeltaTime, Vector
 // Semi implicit Euler
 void Integrator::Euler(State &State, float DeltaTime)
 {
-    //State.Velocity = Vector2Add(State.Velocity, Vector2Scale(State.Acceleration, DeltaTime));
-    //State.Position = Vector2Add(State.Position, Vector2Scale(State.Velocity, DeltaTime));
-
     State.Position += Vector2Scale(State.Velocity, DeltaTime);
     State.Velocity += Vector2Scale(State.Acceleration, DeltaTime);
 }
