@@ -5,7 +5,7 @@
 enum class IntegratorType
 {
     Euler = 0,
-    RK2
+    Verlet
 };
 
 // Integrator operates on acceleration only.
@@ -14,10 +14,10 @@ class Integrator
 {
 public:
 
-    static void Step(State& State, float DeltaTime, IntegratorType Type);
+    static void Step(IntegratorType Type, State& State, float DeltaTime, Vector2 Center, float mu);
 
 private:
 
     static void Euler(State& State, float DeltaTime);
-    static void RK2(State& State, float DeltaTime);
+    static void Verlet(State& s, float dt, Vector2 center, float mu);
 };

@@ -8,5 +8,5 @@
 class Renderer
 {
 public:
-    static void Draw(const State& State, IntegratorType Type, bool StressMode, float SimulationDt);
+    static void Draw(const State& State, Vector2 Center, IntegratorType Type, float Energy);
 };

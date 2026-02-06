@@ -3,114 +3,65 @@
 #include "render/Renderer.hpp"
 #include "simulation/State.hpp"
 #include "simulation/Integrator.hpp"
-#include "simulation/Dynamics.hpp"
+#include "simulation/OrbitDynamics.hpp"
 
 constexpr int WINDOW_WIDTH = 1920;
 constexpr int WINDOW_HEIGHT = 1080;
 
 int main()
 {
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "2D Kinematics & Time Integration");
-    SetTargetFPS(120);
+    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Circular Orbit - Energy Preservation");
+    SetTargetFPS(300);
     ToggleFullscreen();
 
-    constexpr float FixedDeltaTime = 1.0f / 100.0f; // 100 Hz
-    float accumulator = 0.0f;
+   Vector2 Center = { WINDOW_WIDTH * 0.5f, WINDOW_HEIGHT * 0.5f };
+   float MU = 20000.0f;
 
-    double lastTime = GetTime();
+   State CurrentState;
+   CurrentState.Position = { Center.x + 200.f, Center.y };
+   CurrentState.Velocity = { 0.0f, -sqrtf(MU / 200.0f) };
 
-    State state;
-    state.Position = { WINDOW_WIDTH * 0.5f, WINDOW_HEIGHT * 0.5f };
+   IntegratorType CurrentType = IntegratorType::Verlet;
 
-    IntegratorType CurrentIntegrator = IntegratorType::Euler;
-    
-    // Stress mode toggle
-    bool StressMode = false;
+   float DeltaTime = 1.0f / 20.f;
 
-    while (!WindowShouldClose())
-    {
-        double currentTime = GetTime();
-        float frameTime = static_cast<float>(currentTime - lastTime);
-        lastTime = currentTime;
-
-        constexpr float MaxFrameTime = 0.25f;
-        if (frameTime > MaxFrameTime)
+   while(!WindowShouldClose())
+   {
+        if(IsKeyPressed(KEY_ONE))
         {
-            frameTime = MaxFrameTime;
+            CurrentType = IntegratorType::Euler;
+        }
+        if(IsKeyPressed(KEY_TWO))
+        {
+            CurrentType = IntegratorType::Verlet;
         }
 
-        accumulator += frameTime;
-
-        Vector2 inputDir = {0.0f, 0.0f};
-
-        if (IsKeyPressed(KEY_ONE))
+        if(IsKeyPressed(KEY_R))
         {
-            CurrentIntegrator = IntegratorType::Euler;
+            CurrentState.Position = { Center.x + 200.0f, Center.y };
+            CurrentState.Velocity = { 0.0f, -sqrtf( MU / 200.0f) };
+            CurrentState.Trail.clear();
         }
 
-        if (IsKeyPressed(KEY_TWO))
+
+        OrbitDynamics::ComputeGravityAcceleration(CurrentState, Center, MU);
+        Integrator::Step(CurrentType, CurrentState, DeltaTime, Center, MU);
+
+        CurrentState.Trail.push_back(CurrentState.Position);
+
+        if(CurrentState.Trail.size() > 30000)
         {
-            CurrentIntegrator = IntegratorType::RK2;
+            CurrentState.Trail.erase(CurrentState.Trail.begin());
         }
 
-        if (IsKeyDown(KEY_W)) inputDir.y -= 1.0f;
-        if (IsKeyDown(KEY_S)) inputDir.y += 1.0f;
-        if (IsKeyDown(KEY_A)) inputDir.x -= 1.0f;
-        if (IsKeyDown(KEY_D)) inputDir.x += 1.0f;
-        if (IsKeyPressed(KEY_DOWN))
-        {
-            state.Mass = std::max(0.1f, state.Mass - 0.2f);
-        }
-        if (IsKeyPressed(KEY_UP))
-        {
-            state.Mass += 0.2f;
-        }   
+        float TotalEnergy = OrbitDynamics::ComputeTotalEnergy(CurrentState, Center, MU);
 
-        if(IsKeyDown(KEY_R))
-         {
-            //Stop movement
-            state.Force = {0.0f, 0.0f};
-            state.Velocity = {0.0f, 0.0f};
-            state.Acceleration = {0.0f, 0.0f};
-            //Center object
-            state.Position.x = WINDOW_WIDTH * 0.5f;
-            state.Position.y = WINDOW_HEIGHT * 0.5f;
-            //Clearing trail
-            state.Trail.clear();
-        }
-        
-        // Stress mode
-        if (IsKeyPressed(KEY_T))
-        {
-            StressMode = !StressMode;
-        }
+        Renderer::Draw(CurrentState, Center, CurrentType, TotalEnergy);
 
-        if (Vector2Length(inputDir) > 0.0f)
-        {
-            inputDir = Vector2Normalize(inputDir);
-        }
-
-        float simulationDt = StressMode ? (1.0f / 25.0f) : FixedDeltaTime;
-
-        constexpr float InputForce = 800.0f;
-        state.Force = Vector2Scale(inputDir, InputForce);
-
-        while (accumulator >= simulationDt)
-        {
-            Dynamics::ComputeAcceleration(state, /*DragEnabled=*/true);
-            Integrator::Step(state, simulationDt, CurrentIntegrator);
-            accumulator -= simulationDt;
-        }
-
-        state.Trail.push_back(state.Position);
-        if (state.Trail.size() > 1000)
-        {
-            state.Trail.erase(state.Trail.begin());
-        }
-
-        Renderer::Draw(state, CurrentIntegrator, StressMode, simulationDt);
-    }
+        DrawText(TextFormat("Trail Lengh: %d", CurrentState.Trail.size()), 10, 140, 20, BLUE);
+   }
 
     CloseWindow();
+
     return 0;
 }

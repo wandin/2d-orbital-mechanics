@@ -1,7 +1,8 @@
 #include "Integrator.hpp"
+#include <raymath.h>
 
 // Dispatcher
-void Integrator::Step(State &State, float DeltaTime, IntegratorType Type)
+void Integrator::Step(IntegratorType Type, State& State, float DeltaTime, Vector2 Center, float mu)
 {
     switch(Type)
     {
@@ -9,8 +10,8 @@ void Integrator::Step(State &State, float DeltaTime, IntegratorType Type)
         Euler(State, DeltaTime);
         break;
         
-        case IntegratorType::RK2:
-        RK2(State, DeltaTime);
+        case IntegratorType::Verlet:
+        Verlet(State, DeltaTime, Center, mu);
         break;
     }
 }
@@ -18,26 +19,39 @@ void Integrator::Step(State &State, float DeltaTime, IntegratorType Type)
 // Semi implicit Euler
 void Integrator::Euler(State &State, float DeltaTime)
 {
-    State.Velocity.x += State.Acceleration.x * DeltaTime;
-    State.Velocity.y += State.Acceleration.y * DeltaTime;
+    //State.Velocity = Vector2Add(State.Velocity, Vector2Scale(State.Acceleration, DeltaTime));
+    //State.Position = Vector2Add(State.Position, Vector2Scale(State.Velocity, DeltaTime));
 
-    State.Position.x += State.Velocity.x * DeltaTime;
-    State.Position.y += State.Velocity.y * DeltaTime;
+    State.Position += Vector2Scale(State.Velocity, DeltaTime);
+    State.Velocity += Vector2Scale(State.Acceleration, DeltaTime);
 }
 
-// RK2 Midpoint
-void Integrator::RK2(State &State, float DeltaTime)
+// Velocity Verlet
+void Integrator::Verlet(State& State, float DeltaTime, Vector2 Center, float MU)
 {
-    // State at midpoint
-    Vector2 MidVelocity = {
-        State.Velocity.x + State.Acceleration.x * (DeltaTime * 0.5f),
-        State.Velocity.y + State.Acceleration.y * (DeltaTime * 0.5f)
-    };
+    Vector2 a0 = State.Acceleration;
 
-    // --- integrate full step
-    State.Position.x += MidVelocity.x * DeltaTime;
-    State.Position.y += MidVelocity.y * DeltaTime;
+    // x(t + dt)
+    State.Position = Vector2Add(
+        State.Position,
+        Vector2Add(
+            Vector2Scale(State.Velocity, DeltaTime),
+            Vector2Scale(a0, 0.5f * DeltaTime * DeltaTime)
+        )
+    );
 
-    State.Velocity.x += State.Acceleration.x * DeltaTime;
-    State.Velocity.y += State.Acceleration.y * DeltaTime;
+    // compute a(t + dt)
+    Vector2 r = Vector2Subtract(Center, State.Position);
+    float d2 = Vector2LengthSqr(r);
+    float d = sqrtf(d2);
+    Vector2 a1 = Vector2Scale(r, MU / (d2 * d));
+
+    // v(t + dt)
+    State.Velocity = Vector2Add(
+        State.Velocity,
+        Vector2Scale(Vector2Add(a0, a1), 0.5f * DeltaTime)
+    );
+
+    State.Acceleration = a1;
 }
+
