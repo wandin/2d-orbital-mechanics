@@ -19,14 +19,27 @@ This project is part of a progressive simulation series aimed at building strong
 
 ## 🧠 Physical Model
 
-The system models a **point mass orbiting a fixed central body** under Newtonian gravity.
+The system models multiple independent point masses orbiting a fixed central body
+
+## 🌌 Multi-Body Support
+
+The simulation supports multiple independent orbiting bodies under the same central gravitational field.
+
+Each body:
+
+- Has its own initial radius
+- Computes its own orbital velocity
+- Maintains an independent trajectory history
+
+Bodies do not interact gravitationally with each other.
+**This keeps the system as a set of independent two-body problems.**
 
 ### Central Gravity Model
 
 The acceleration is defined as:
 
 ```
-a = -μ · r / |r|³
+a = μ · r / |r|³
 ```
 
 Where:
@@ -87,11 +100,15 @@ This integrator demonstrates why **symplectic methods are preferred in orbital m
 
 ---
 
-## ⚡ Energy Analysis
+## ⚡ Specific Mechanical Energy
 
-The total mechanical energy is computed as:
+The simulation computes specific mechanical energy:
 ```
-E = (1/2) · v² − μ / r
+ε = (1/2) · v² − μ / r
+```
+For circular orbit:
+```
+ε = − μ / (2r)
 ```
 
 ### Observations
@@ -109,16 +126,33 @@ This behavior directly explains the visual spiraling observed with Euler integra
 
 ## 🎨 Visualization
 
-- Green trail → orbital path
+- Colored trails → orbital paths (one per body)
 - Yellow dot → central body
-- Red dot → orbiting satellite
+- Colored dots → independent satellites
 - HUD displays:
   - Integrator type
-  - Total energy
+  - Specific mechanical energy
   - Radius error
   - FPS
 
 The visualization makes numerical errors **immediately visible**, even without inspecting code.
+
+---
+
+## 📐 Numerical Properties Demonstrated
+
+This simulation highlights key numerical concepts:
+- Energy drift in non-symplectic integrators
+- Long-term bounded energy error in symplectic methods
+- Symplectic time integration preserves the Hamiltonian structure of the system
+- Orbital instability due to numerical integration errors
+- Sensitivity to timestep selection
+
+These are foundational concepts in:
+- Orbital mechanics
+- Long-duration spacecraft propagation
+- High-fidelity aerospace simulation
+- Guidance, Navigation & Control systems
 
 ---
 
@@ -203,8 +237,8 @@ Project	Concept:
 
 ### 🚀 Next Steps
 
-Multiple orbiting bodies
-Elliptical and perturbed orbits
-Energy vs time plots
-Attitude and rotational dynamics
-Closed-loop orbital control
+- Elliptical and perturbed orbits
+- Energy vs time plots
+- Angular momentum monitoring
+- Attitude and rotational dynamics
+- Closed-loop orbital control
