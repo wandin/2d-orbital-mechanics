@@ -8,5 +8,6 @@
 class Renderer
 {
 public:
-    static void Draw(const State& State, Vector2 Center, IntegratorType Type, float Energy);
+    static void DrawBody(const State& State);
+    static void DrawHUD(IntegratorType IntegratorType, float Energy, float RadiusError);
 };

@@ -9,5 +9,7 @@ struct State
     Vector2 Velocity{0.0f, 0.0f};
     Vector2 Acceleration{0.0f, 0.0f};
 
+    Color StateColor;
+
     std::vector<Vector2> Trail;
 };

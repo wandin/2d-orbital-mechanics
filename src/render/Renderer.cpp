@@ -1,34 +1,23 @@
 #include "Renderer.hpp"
 #include <raymath.h>
 
-void Renderer::Draw(const State &State, Vector2 Center, IntegratorType Type, float Energy)
+void Renderer::DrawBody(const State& State)
 {
-    BeginDrawing();
-    ClearBackground(BLACK);
-
-    // Orbit trail
-    for(size_t i = 1; i < State.Trail.size(); ++i)
+    // Trail
+    for (size_t i = 1; i < State.Trail.size(); ++i)
     {
-        DrawLineV(State.Trail[i-1], State.Trail[i], DARKGREEN);
+        DrawLineV(State.Trail[i - 1], State.Trail[i], State.StateColor);
     }
 
-    // Central Body
-    DrawCircleV(Center, 8.0f, YELLOW);
+    // Satellite
+    DrawCircleV(State.Position, 5.0f, State.StateColor);
+}
 
-    //Satellite
-    DrawCircleV(State.Position, 5.0f, RED);
+void Renderer::DrawHUD(IntegratorType IntegratorType, float Energy, float RadiusError)
+{
+    const char* name = IntegratorType == IntegratorType::Euler ? "Euler" : "Verlet";
 
-
-    // Info Text
-    const char* Name = Type == IntegratorType::Euler ? "Euler" : "Verlet";
-    
-    DrawText(TextFormat("Integrator: %s", Name), 10, 20, 20, WHITE);
-    DrawText(TextFormat("Total energy: %.4f", Energy), 10, 50, 20, LIGHTGRAY);
-    DrawText("Press [1] Euler | [2] Verlet | [R] Reset", 10, 80, 20, GRAY);
-    DrawText(TextFormat("Current FPS: %d", GetFPS()), 10,110, 20, GRAY);
-
-    float radius = Vector2Distance(State.Position, Center);
-    DrawText(TextFormat("Radius error: %.2f", radius - 200.0f), 10, 180, 20, ORANGE);
-
-    EndDrawing();
+    DrawText(TextFormat("Integrator: %s", name), 10, 80, 20, WHITE);
+    DrawText(TextFormat("Total energy: %.2f", Energy), 10, 110, 20, LIGHTGRAY);
+    DrawText(TextFormat("Radius error: %.2f", RadiusError), 10, 140, 20, ORANGE);
 }

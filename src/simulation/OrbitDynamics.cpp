@@ -5,13 +5,11 @@
 void OrbitDynamics::ComputeGravityAcceleration(State &State, Vector2 Center, float MU)
 {
     Vector2 R = Vector2Subtract(Center, State.Position);
-    float DistanceSq = Vector2LengthSqr(R);
-    float Distance = sqrtf(DistanceSq);
 
-    Vector2 Direction = Vector2Scale(R, 1.0f / Distance);
+    float d2 = Vector2LengthSqr(R);
+    float d = sqrtf(d2);
 
-    float AccelerationMagnitude = MU / DistanceSq;
-    State.Acceleration = Vector2Scale(Direction, AccelerationMagnitude);
+    State.Acceleration = Vector2Scale(R, MU / (d2 * d));
 }
 
 float OrbitDynamics::ComputeTotalEnergy(const State &State, Vector2 Center, float MU)
